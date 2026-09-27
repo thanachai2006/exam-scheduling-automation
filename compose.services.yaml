@@ -38,10 +38,10 @@ services:
 
   postgres:
     container_name: database
-    image: postgres
+    image: postgres:17
     restart: unless-stopped
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=exam-scheduling
       - POSTGRES_PASSWORD=mysecretpassword
@@ -49,10 +49,11 @@ services:
     ports:
       - 5432:5432
     healthcheck:
-      test: ["CMD", "pg_isready", -U, postgres]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d exam-scheduling"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 15s
 
   n8n:
     container_name: n8n
@@ -67,7 +68,7 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
       - N8N_RUNNERS_ENABLED=true
     volumes:
-      - ./n8n_data:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
 
 volumes:
   frontend_data:

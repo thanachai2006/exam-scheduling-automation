@@ -14,6 +14,7 @@ export const ExamPlanSchema = t.Object({
   courseName: t.String(),
   duration: t.Number(),
   roomNumber: t.String(),
+  roomFloor: t.Optional(t.String()),
   timeStart: t.Any(),
   timeEnd: t.Any(),
   violations: t.Any(),

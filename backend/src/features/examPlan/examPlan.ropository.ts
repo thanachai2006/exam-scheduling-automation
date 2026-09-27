@@ -39,24 +39,26 @@ export namespace ExamPlanRepository {
             // 2. ดึงข้อมูลทั้งหมดของ RunKey นั้นออกมา
             let query = `
                 SELECT 
-                    "id", 
-                    "runkey" as "runKey",
-                    "exam_unit_id" as "examUnitId",
-                    "enrollment_id" as "enrollmentId",
-                    "class_id" as "classId",
-                    "course_id" as "courseId",
-                    "classname" as "className",
-                    "departmentname" as "departmentName",
-                    "coursecode" as "courseCode",
-                    "coursename" as "courseName",
-                    "duration",
-                    "roomnumber" as "roomNumber",
-                    "timestart" as "timeStart",
-                    "timeend" as "timeEnd",
-                    "violations",
-                    "createdat" as "createdAt"
-                FROM "ExamPlan"
-                WHERE "runkey" = $1
+                    ep."id", 
+                    ep."runkey" as "runKey",
+                    ep."exam_unit_id" as "examUnitId",
+                    ep."enrollment_id" as "enrollmentId",
+                    ep."class_id" as "classId",
+                    ep."course_id" as "courseId",
+                    ep."classname" as "className",
+                    ep."departmentname" as "departmentName",
+                    ep."coursecode" as "courseCode",
+                    ep."coursename" as "courseName",
+                    ep."duration",
+                    ep."roomnumber" as "roomNumber",
+                    r."floor" as "roomFloor",
+                    ep."timestart" as "timeStart",
+                    ep."timeend" as "timeEnd",
+                    ep."violations",
+                    ep."createdat" as "createdAt"
+                FROM "ExamPlan" ep
+                LEFT JOIN "Room" r ON r."roomNumber" = ep."roomnumber"
+                WHERE ep."runkey" = $1
             `;
             
             const params: any[] = [targetRunKey];
@@ -64,10 +66,10 @@ export namespace ExamPlanRepository {
                 // Remove prefixes like "สาขาวิชา" or "สาขา" to match more flexibly
                 const cleanDeptName = departmentName.replace(/^(สาขาวิชา|สาขา)/, '').trim();
                 params.push(`%${cleanDeptName}%`);
-                query += ` AND "departmentname" ILIKE $2`;
+                query += ` AND ep."departmentname" ILIKE $2`;
             }
             
-            query += ` ORDER BY "timestart" ASC, "classname" ASC`;
+            query += ` ORDER BY ep."timestart" ASC, ep."classname" ASC`;
             
             const rawResults = await prisma.$queryRawUnsafe(query, ...params) as any[];
             

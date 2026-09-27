@@ -24,7 +24,14 @@ export interface ScheduleResult {
   courseCode: string;
   courseName: string;
   roomNumber: string;
+  roomFloor?: string;
 }
+
+const getRoomNumber = (schedule: any): string => {
+  const roomNumber = schedule?.roomNumber ?? schedule?.roomnumber ?? schedule?.room_no;
+  if (roomNumber === null || roomNumber === undefined) return "";
+  return String(roomNumber).trim();
+};
 
 interface ValidationResult {
   isValid: boolean;
@@ -118,17 +125,17 @@ const AdminScheduling: React.FC = () => {
           // unless we want to show a generic "Loaded from database" state
           if (!validation) {
             setValidation({
-              isValid: true,
+              isValid: false,
               summary: {
                 totalExams: new Set(response.data.map((s: any) => s.courseCode || s.courseId)).size,
                 totalRoomsUsed: new Set(
                   response.data
-                    .map((s: any) => String(s.roomnumber || s.roomNumber || "").trim())
+                    .map((s: any) => getRoomNumber(s))
                     .filter((r: string) => r !== "")
                 ).size,
-                violations: { critical: 0, warning: 0 }
+                violations: { critical: 0, warning: 1 }
               },
-              errors: []
+              errors: ["ไม่พบรายงานผลการตรวจสอบเงื่อนไขของตารางสอบนี้"]
             });
           }
         } else if (status === "success") {
@@ -217,12 +224,28 @@ const AdminScheduling: React.FC = () => {
                       if (audit.course_same_time === false) errors.push("พบวิชาสอบเดียวกันจัดสอบไม่พร้อมกัน");
                       if (audit.course_group_same_time === false) errors.push("พบกลุ่มวิชาเดียวกันจัดสอบไม่พร้อมกัน");
                       if (audit.room_overlap === false) errors.push("พบการใช้ห้องสอบซ้อนทับกัน");
+
+                      const reportedErrors = [
+                        ...(Array.isArray(audit.errors) ? audit.errors : []),
+                        ...(Array.isArray(data.errors) ? data.errors : []),
+                        ...(Array.isArray(responseData.errors) ? responseData.errors : [])
+                      ];
+                      reportedErrors.forEach((error: any) => {
+                        const message = typeof error === "string"
+                          ? error
+                          : error?.message || error?.issue || error?.detail;
+                        if (message && !errors.includes(message)) errors.push(message);
+                      });
                       
                       // กรณี failed_validation แบบมีรายละเอียดจาก n8n ตัวเก่า (กันเหนียว)
                       const oldDetails = audit.details || [];
                       oldDetails.forEach((d: any) => {
                         errors.push(`${d.rule_violated || 'ข้อผิดพลาด'}: ${d.issue || 'พบปัญหา'} (ID: ${d.affected_ids?.join(', ') || '-'})`);
                       });
+
+                      if (!isSuccess && errors.length === 0) {
+                        errors.push(responseData.message || data.message || "ตารางสอบไม่ผ่านการตรวจสอบเงื่อนไข");
+                      }
 
                       finalSchedule = schedule;
                       finalValidation = {
@@ -231,8 +254,8 @@ const AdminScheduling: React.FC = () => {
                           totalExams: new Set(finalSchedule.map((s: any) => s.courseCode || s.courseId)).size,
                           totalRoomsUsed: new Set(
                             finalSchedule
-                              .map((s: any) => String(s.roomnumber || s.roomNumber || "").trim())
-                              .filter((r: string) => r !== "")
+                              .map((s: any) => getRoomNumber(s))
+                              .filter(Boolean)
                           ).size,
                           violations: { 
                             critical: errors.length, 
@@ -254,8 +277,8 @@ const AdminScheduling: React.FC = () => {
                             totalExams: new Set(content.map((s: any) => s.courseCode || s.courseId)).size, 
                             totalRoomsUsed: new Set(
                               content
-                                .map((s: any) => String(s.roomnumber || s.roomNumber || "").trim())
-                                .filter((r: string) => r !== "")
+                                .map((s: any) => getRoomNumber(s))
+                                .filter(Boolean)
                             ).size 
                           }, 
                           errors: [] 

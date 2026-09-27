@@ -18,32 +18,9 @@ interface ClassGroup {
 }
 
 const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
-    // Helper to get department abbreviation
-    const getDeptAbbr = (deptName: string): string => {
-        if (!deptName) return "";
-        const name = deptName.trim();
-        if (name.includes("การจัดการสำนักงานดิจิทัล")) return "กจ.";
-        if (name.includes("การตลาด")) return "กต.";
-        if (name.includes("บัญชี") || name.includes("การบัญชี")) return "บช.";
-        if (name.includes("คอมพิวเตอร์")) return "คพ.";
-        if (name.includes("ดิจิทัลกราฟิก")) return "ดจ.";
-        if (name.includes("คหกรรม")) return "คก.";
-        if (name.includes("ธุรกิจค้าปลีก")) return "คป.";
-        if (name.includes("โลจิสติกส์")) return "ลจ.";
-        if (name.includes("เทคโนโลยีสารสนเทศ")) return "ทส.";
-        if (name.includes("เทคโนโลยีธุรกิจดิจิทัล") || name.includes("ธุรกิจดิจิทัล")) return "ธด.";
-        if (name.includes("แฟชั่น")) return "ฟช.";
-        if (name.includes("โรงแรม")) return "รร.";
-        if (name.includes("นิเทศศิลป์")) return "อบ.";
-        if (name.includes("อาหาร")) return "อภ.";
-        if (name.includes("ต่างประเทศ")) return "ตป.";
-        return "";
-    };
-
-    const formatClassName = (className: string, deptName: string): string => {
-        const abbr = getDeptAbbr(deptName);
+    const formatClassName = (className: string): string => {
         const cleanedClass = className.replace(/\s?[ก-ฮ]{2}\.$/, "").trim();
-        return abbr ? `${cleanedClass}${abbr}` : cleanedClass;
+        return cleanedClass;
     };
 
     const getClassSortKey = (className: string, deptName: string): string => {
@@ -82,7 +59,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
 
         const classes: ClassGroup[] = [];
         sorted.forEach(item => {
-            const displayClassName = formatClassName(item.className, item.departmentName);
+            const displayClassName = formatClassName(item.className);
             const dateKey = formatDate(item.timeStart);
             
             let classObj = classes.find(c => c.displayName === displayClassName);
@@ -170,7 +147,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
                                                   const rnStr = String(rn).trim();
                                                   if (rnStr === "" || rnStr === "null") return "-";
                                                   if (rnStr === "0") return "รอดำเนินการ";
-                                                  return rnStr;
+                                                  return row.roomFloor ? `${rnStr} (ชั้น ${row.roomFloor})` : rnStr;
                                                 })()}
                                             </td>
                                         </tr>
